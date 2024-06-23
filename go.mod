@@ -3,6 +3,7 @@ module github.com/oatsaysai/go-test-generic-libs
 go 1.22.2
 
 require (
+	github.com/alexmullins/zip v0.0.0-20180717182244-4affb64b04d0
 	github.com/aws/aws-lambda-go v1.47.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/minio/minio-go/v7 v7.0.72

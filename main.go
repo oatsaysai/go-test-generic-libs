@@ -1,13 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
+
+	"github.com/alexmullins/zip"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -73,6 +77,26 @@ func createReport001() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Zip report file with password
+	err = zipFileWithPassword(
+		"report_001.csv",
+		"report_001.zip",
+		"test-password",
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Upload zip file to S3
+	err = s3Client.UploadFile(
+		s3,
+		"report_001.zip",
+		"report_001.zip",
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func genReport001() {
@@ -112,4 +136,34 @@ func genReport001() {
 			log.Fatalln("error writing record to file", err)
 		}
 	}
+}
+
+func zipFileWithPassword(fileName, zipFileName, password string) error {
+
+	body, err := os.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+
+	// write a password zip
+	fzip, err := os.Create(zipFileName)
+	if err != nil {
+		return err
+	}
+
+	zipw := zip.NewWriter(fzip)
+	defer zipw.Close()
+
+	w, err := zipw.Encrypt(fileName, password)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(w, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	zipw.Flush()
+
+	return nil
 }
