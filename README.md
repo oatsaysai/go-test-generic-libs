@@ -4,15 +4,16 @@
 
 - Go 1.22 or later
 - Mariadb 10.3.7 or later
+- S3/Min.IO
 - make
 
 ## Getting Started
 
-1. Start maria DB
+1. Start deps docker
 
 ```sh
 cd scripts-for-local
-./start-dev-env.sh
+./start-deps-env.sh
 ```
 
 2. Run service
@@ -20,5 +21,5 @@ cd scripts-for-local
 - Back to root dir (cd ..)
 
 ```sh
-make run-test-libs
+make run
 ```

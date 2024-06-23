@@ -5,30 +5,27 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/minio/minio-go/v7"
 	"github.com/oatsaysai/go-test-generic-libs/mariaDB"
+	s3Client "github.com/oatsaysai/go-test-generic-libs/s3"
 	"github.com/spf13/viper"
 )
 
 var db *sql.DB
+var s3 *minio.Client
 
 func init() {
 	viper.AutomaticEnv()
 }
 
 func main() {
-
-	// Read flag
-	runLambda := flag.Bool("lambda", true, "Run as lambda")
-	flag.Parse()
-
-	// Init instance
+	// Init instances
 	var err error
 	db, err = mariaDB.ConnectDB()
 	if err != nil {
@@ -36,10 +33,15 @@ func main() {
 	}
 	defer db.Close()
 
-	if *runLambda {
+	s3, err = s3Client.NewS3Client()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if runtime_api, _ := os.LookupEnv("AWS_LAMBDA_RUNTIME_API"); runtime_api != "" {
 		lambda.Start(handler)
 	} else {
-		genReport001()
+		createReport001()
 	}
 }
 
@@ -51,10 +53,26 @@ func handler(ctx context.Context, sqsEvent events.SQSEvent) error {
 	for _, msg := range sqsEvent.Records {
 		fmt.Printf("Got SQS message %q with body %q\n", msg.MessageId, msg.Body)
 		// TODO: Add application logic here
-		genReport001()
+		createReport001()
 	}
 
 	return nil
+}
+
+func createReport001() {
+	// Get data from DB
+	// Gen to CSV
+	genReport001()
+
+	// Upload to S3
+	err := s3Client.UploadFile(
+		s3,
+		"report_001.csv",
+		"report_001.csv",
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func genReport001() {
