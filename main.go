@@ -12,7 +12,6 @@ import (
 	"os"
 
 	"github.com/alexmullins/zip"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/minio/minio-go/v7"
